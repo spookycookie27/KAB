@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="KickAssBrass.uvip" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="KickAssBrass_Master.uvip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

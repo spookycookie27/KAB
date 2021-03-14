@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.IO.Enumeration;
 using System.Linq;
@@ -9,12 +11,13 @@ namespace ConsoleApp1
 {
     class Program
     {
-        private static string fileName = "KickAssBrass_Master.uvip";
+        private static string fileName = "KickAssBrass_master.uvip";
 
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
             int countChanged = 0;
+            int keygroupIndex = 0;
             XmlDocument document = new XmlDocument();
             document.Load(fileName);
             XmlElement root = document.DocumentElement;
@@ -22,28 +25,148 @@ namespace ConsoleApp1
             Console.WriteLine("Keygroups total: : " + keyGroups.Count());
             foreach (var keyGroup in keyGroups)
             {
-                var lowKey = keyGroup.Attributes["LowKey"].InnerText;
-                var highKey = keyGroup.Attributes["HighKey"].InnerText;
-                var name = keyGroup.Attributes["Name"].InnerText;
-                var samplePlayer = keyGroup.SelectSingleNode(".//Oscillators/SamplePlayer");
-                var baseNote = samplePlayer.Attributes["BaseNote"].InnerText;
-                if (highKey != baseNote)
+                var sampleName = keyGroup.Attributes["DisplayName"].InnerText;
+                // Tenor Main
+                if (sampleName.StartsWith("TSX MF") || sampleName.StartsWith("TSX FF") ||
+                    sampleName.StartsWith("TSX SLR"))
                 {
-                    Console.WriteLine(name);
-                    Console.WriteLine("lowKey: " + lowKey);
-                    Console.WriteLine("highKey: " + highKey);
-                    Console.WriteLine("baseNote: " + baseNote);
-                    Console.WriteLine("Changing basenote to: " + highKey);
-                    samplePlayer.Attributes["BaseNote"].InnerText = highKey;
-                    var newBaseNot = samplePlayer.Attributes["BaseNote"].InnerText;
-                    Console.WriteLine("New basenote : " + newBaseNot);
-                    countChanged++;
+                    var lowKey = keyGroup.Attributes["LowKey"].InnerText;
+                    var highKey = keyGroup.Attributes["HighKey"].InnerText;
+                    var name = keyGroup.Attributes["Name"].InnerText;
+                    var samplePlayer = keyGroup.SelectSingleNode(".//Oscillators/SamplePlayer");
+                    var baseNote = samplePlayer.Attributes["BaseNote"].InnerText;
+                    Console.WriteLine("Checking keygroup: " + keygroupIndex);
+                    if (lowKey != highKey && highKey != baseNote)
+                    {
+                        Console.WriteLine(name);
+                        Console.WriteLine("lowKey: " + lowKey);
+                        Console.WriteLine("highKey: " + highKey);
+                        Console.WriteLine("baseNote: " + baseNote);
+                        Console.WriteLine("Changing basenote to: " + highKey);
+                        samplePlayer.Attributes["BaseNote"].InnerText = highKey;
+                        var newBaseNote = samplePlayer.Attributes["BaseNote"].InnerText;
+                        Console.WriteLine("New basenote : " + newBaseNote);
+                        countChanged++;
+                    }
                 }
+
+                keygroupIndex++;
             }
             Console.WriteLine("Total Changed: " + countChanged);
 
             document.Save("KickAssBrass.uvip");
-            Console.ReadLine();
         }
+
+        private Dictionary<string, string> noteNumbers = new Dictionary<string, string>
+        {
+            {"0", "C-1"},
+            {"1", "C#-1"},
+            {"2", "D-1"},
+            {"3", "D#-1"},
+            {"4", "E-1"},
+            {"5", "F-1"},
+            {"6", "F#-1"},
+            {"7", "G-1"},
+            {"8", "G#-1"},
+            {"9", "A-1"},
+            {"10", "A#-1"},
+            {"11", "B-1"},
+            {"12", "C0"},
+            {"13", "C#0"},
+            {"14", "D0"},
+            {"15", "D#0"},
+            {"16", "E0"},
+            {"17", "F0"},
+            {"18", "F#0"},
+            {"19", "G0"},
+            {"20", "G#0"},
+            {"21", "A0"},
+            {"22", "A#0"},
+            {"23", "B0"},
+            {"24", "C1"},
+            {"25", "C#1"},
+            {"26", "D1"},
+            {"27", "D#1"},
+            {"28", "E1"},
+            {"29", "F1"},
+            {"30", "F#1"},
+            {"31", "G1"},
+            {"32", "G#1"},
+            {"33", "A1"},
+            {"34", "A#1"},
+            {"35", "B1"},
+            {"36", "C2"},
+            {"37", "C#2"},
+            {"38", "D2"},
+            {"39", "D#2"},
+            {"40", "E2"},
+            {"41", "F2"},
+            {"42", "F#2"},
+            {"43", "G2"},
+            {"44", "G#2"},
+            {"45", "A2"},
+            {"46", "A#2"},
+            {"47", "B2"},
+            {"48", "C3"},
+            {"49", "C#3"},
+            {"50", "D3"},
+            {"51", "D#3"},
+            {"52", "E3"},
+            {"53", "F3"},
+            {"54", "F#3"},
+            {"55", "G3"},
+            {"56", "G#3"},
+            {"57", "A3"},
+            {"58", "A#3"},
+            {"59", "B3"},
+            {"60", "C4"},
+            {"61", "C#4"},
+            {"62", "D4"},
+            {"63", "D#4"},
+            {"64", "E4"},
+            {"65", "F4"},
+            {"66", "F#4"},
+            {"67", "G4"},
+            {"68", "G#4"},
+            {"69", "A4"},
+            {"70", "A#4"},
+            {"71", "B4"},
+            {"72", "C5"},
+            {"73", "C#5"},
+            {"74", "D5"},
+            {"75", "D#5"},
+            {"76", "E5"},
+            {"77", "F5"},
+            {"78", "F#5"},
+            {"79", "G5"},
+            {"80", "G#5"},
+            {"81", "A5"},
+            {"82", "A#5"},
+            {"83", "B5"},
+            {"84", "C6"},
+            {"85", "C#6"},
+            {"86", "D6"},
+            {"87", "D#6"},
+            {"88", "E6"},
+            {"89", "F6"},
+            {"90", "F#6"},
+            {"91", "G6"},
+            {"92", "G#6"},
+            {"93", "A6"},
+            {"94", "A#6"},
+            {"95", "B6"},
+            {"96", "C7"},
+            {"97", "C#7"},
+            {"98", "D7"},
+            {"99", "D#7"},
+            {"100", "E7"},
+            {"101", "F7"},
+            {"102", "F#7"},
+            {"103", "G7"},
+            {"104", "G#7"},
+            {"105", "A7"},
+            {"106", "A#7"},
+            {"107", "B7"}
+        };
     }
 }
