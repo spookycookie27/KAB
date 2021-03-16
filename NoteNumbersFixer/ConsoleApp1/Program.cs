@@ -12,49 +12,171 @@ namespace ConsoleApp1
     class Program
     {
         private static string fileName = "KickAssBrass_master.uvip";
+        private static Dictionary<string, string> _noteMap;
+        private static string[] problems = new[]
+        {
+            "TNR SW5 C#5C", "TPT FF B4 +", "TPT FF D5+", "TPT FF F5+", "TPT FF G5+", "TPT FF A#5+", "TPT PP F3B"
+        };
 
         static void Main(string[] args)
         {
+            _noteMap = GetNoteMapsDictionary();
             Console.WriteLine("Hello World!");
-            int countChanged = 0;
-            int keygroupIndex = 0;
-            XmlDocument document = new XmlDocument();
-            document.Load(fileName);
-            XmlElement root = document.DocumentElement;
-            var keyGroups = document.GetElementsByTagName("Keygroup").Cast<XmlElement>();
-            Console.WriteLine("Keygroups total: : " + keyGroups.Count());
-            foreach (var keyGroup in keyGroups)
+            var transposeUp = new[]
             {
-                var sampleName = keyGroup.Attributes["DisplayName"].InnerText;
-                // Tenor Main
-                if (sampleName.StartsWith("TSX MF") || sampleName.StartsWith("TSX FF") ||
-                    sampleName.StartsWith("TSX SLR"))
-                {
-                    var lowKey = keyGroup.Attributes["LowKey"].InnerText;
-                    var highKey = keyGroup.Attributes["HighKey"].InnerText;
-                    var name = keyGroup.Attributes["Name"].InnerText;
-                    var samplePlayer = keyGroup.SelectSingleNode(".//Oscillators/SamplePlayer");
-                    var baseNote = samplePlayer.Attributes["BaseNote"].InnerText;
-                    Console.WriteLine("Checking keygroup: " + keygroupIndex);
-                    if (lowKey != highKey && highKey != baseNote)
-                    {
-                        Console.WriteLine(name);
-                        Console.WriteLine("lowKey: " + lowKey);
-                        Console.WriteLine("highKey: " + highKey);
-                        Console.WriteLine("baseNote: " + baseNote);
-                        Console.WriteLine("Changing basenote to: " + highKey);
-                        samplePlayer.Attributes["BaseNote"].InnerText = highKey;
-                        var newBaseNote = samplePlayer.Attributes["BaseNote"].InnerText;
-                        Console.WriteLine("New basenote : " + newBaseNote);
-                        countChanged++;
-                    }
-                }
+                "TromboneFullProgram",
+                "TromboneLongStabs",
+                "TromboneShortStabs",
+                "TromboneMixedStabs",
+                "TromboneLowStabs",
+                "TromboneLowLongStabs",
+                "TromboneLowSHortStabs",
+                "TromboneLowFalseHarmonic"
+            };
+            var transposeDown = new[]
+            {
+                "TromboneSwells1",
+                "TromboneSwells2",
+                "TromboneSwells3",
+                "TromboneSwells4",
+                "TromboneSwells5",
+                "TenorSaxExpression",
+                "TenorSaxFullProgram",
+                "TenorSaxFullProgramV2",
+                "TenorSaxSlurred",
+                "TenorSaxLongStabs",
+                "TenorSaxShortStabs",
+                "TenorSaxMixedStabs",
+                "TenorSaxVibrato",
+                "TrumpetEnds",
+                "TrumpetExpression",
+                "TrumpetLongFalls",
+                "TrumpetShortFalls",
+                "TrumpetRips+Falls",
+                "TrumpetShortRips",
+                "TrumpetLongRips",
+                "TrumpetLongRips",
+                "TrumpetFullProgram",
+                "TrumpetHard",
+                "TrumpetSoft",
+                "TrumpetFullProgramV2",
+                "TrumpetSlurred",
+                "TrumpetSlides",
+                "TrumpetShortStabs",
+                "TrumpetLongStabs",
+                "TrumpetMixedStabs",
+                "TrumpetSwells1",
+                "TrumpetSwells2",
+                "TrumpetSwells3",
+                "TrumpetSwells4",
+                "TrumpetSwells5",
+                "TrumpetVibrato",
+                "TrumpetTrills",
+                "TrumpetFullProgramV2"
+            };
+            var lowerRange5Octaves = new[]
+            {
+                "TenorSaxFullProgram",
+                "TenorSaxFullProgramV2",
+                "TrumpetFullProgramV2"
+            };
+            var countChanged = 0;
+            
+            var document = new XmlDocument();
+            document.Load(fileName);
+            var root = document.DocumentElement;
+            var totalKeyGroups = root.GetElementsByTagName("Keygroup").Cast<XmlElement>().ToList();
+            Console.WriteLine("totalKeyGroups: " + totalKeyGroups.Count);
+            var layers = document.GetElementsByTagName("Layer").Cast<XmlElement>().ToList();
+            foreach (var layer in layers)
+            {
+                var layerDisplayName = layer.Attributes["DisplayName"].InnerText;
 
-                keygroupIndex++;
+
+                var keyGroups = layer.GetElementsByTagName("Keygroup").Cast<XmlElement>().ToList();
+                //Console.WriteLine($"Layer {layerDisplayName} KeyGroups total: : {keyGroups.Count()}");
+                foreach (var keyGroup in keyGroups)
+                {
+                    var lowerRangeOffset = 48;
+                    var noteNumberOffset = 0;
+                    if (transposeUp.Contains(layerDisplayName))
+                    {
+                        noteNumberOffset = 12;
+                    }
+                    if (transposeDown.Contains(layerDisplayName))
+                    {
+                        noteNumberOffset = -12;
+                    }
+                    if (lowerRange5Octaves.Contains(layerDisplayName))
+                    {
+                        lowerRangeOffset = lowerRangeOffset + 12;
+                    }
+                    var sampleFileName = keyGroup.Attributes["DisplayName"].InnerText;
+                    var lowKey = Convert.ToInt32(keyGroup.Attributes["LowKey"].InnerText);
+                    //var highKey = Convert.ToInt32(keyGroup.Attributes["LowKey"].InnerText);
+                    var sampleName = sampleFileName.Substring(0, sampleFileName.Length - 5);
+                    var keyGroupName = keyGroup.Attributes["DisplayName"].InnerText;
+                    var samplePlayerNode = keyGroup.SelectSingleNode(".//Oscillators/SamplePlayer");
+                    var baseNote = Convert.ToInt32(samplePlayerNode?.Attributes?["BaseNote"].InnerText);
+                    //var calcdNoteNumber = GetNoteNumber(sampleName);
+                    var noteNumber = GetNoteNumber(sampleName);
+                    var diffBetweenNoteNumberAndLowKey = FindDifference(noteNumber, lowKey);
+                    var isLowerRange = diffBetweenNoteNumberAndLowKey > 24;
+                    if (isLowerRange)
+                    {
+                        noteNumber = noteNumber - lowerRangeOffset;
+                    }
+                    else
+                    {
+                        noteNumber = noteNumber + noteNumberOffset;
+                    }
+                    //var diffBetweenNoteNumberAndBaseKey = FindDifference(noteNumber, baseNote);
+                    //if (diffBetweenNoteNumberAndBaseKey > 8)
+                    //{
+                    //    Console.WriteLine(layerDisplayName);
+                    //}
+                    if (baseNote == noteNumber || samplePlayerNode == null) continue;
+
+                    Console.WriteLine($"Changing {layerDisplayName} -  {keyGroupName} basenote from: {baseNote} to {noteNumber}");
+                    if (samplePlayerNode.Attributes != null)
+                    {
+                        samplePlayerNode.Attributes["BaseNote"].InnerText = noteNumber.ToString();
+                    }
+                    countChanged++;
+                }
             }
+
             Console.WriteLine("Total Changed: " + countChanged);
 
             document.Save("KickAssBrass.uvip");
+        }
+
+        private static decimal FindDifference(int nr1, int nr2)
+        {
+            return Math.Abs(nr1 - nr2);
+        }
+
+        private static string GetKey(string sampleName)
+        {
+            var nameForNoteNumber = "";
+            var key = "";
+            if (problems.Contains(sampleName) || sampleName.EndsWith("L"))
+            {
+                nameForNoteNumber = sampleName.TrimEnd(sampleName[^1]).Trim();
+            }
+            else
+            {
+                nameForNoteNumber = sampleName.Trim();
+            }
+
+            key = nameForNoteNumber.Substring(nameForNoteNumber.Length - 3).Replace(" ", "");
+            return key;
+        }
+
+        private static int GetNoteNumber(string sampleName)
+        {
+            var key = GetKey(sampleName);
+            return Convert.ToInt16(_noteMap[key.ToUpper()]);
         }
 
         private Dictionary<string, string> noteNumbers = new Dictionary<string, string>
@@ -168,5 +290,91 @@ namespace ConsoleApp1
             {"106", "A#7"},
             {"107", "B7"}
         };
+
+        private static Dictionary<string, string> GetNoteMapsDictionary()
+        {
+            return new Dictionary<string, string>
+            {
+                {"F0", "29"},
+                {"F#0", "30"},
+                {"G0", "31"},
+                {"G#0", "32"},
+                {"A0", "33"},
+                {"A#0", "34"},
+                {"B0", "35"},
+                {"C1", "36"},
+                {"C#1", "37"},
+                {"D1", "38"},
+                {"D#1", "39"},
+                {"E1", "40"},
+                {"F1", "41"},
+                {"F#1", "42"},
+                {"G1", "43"},
+                {"G#1", "44"},
+                {"A1", "45"},
+                {"A#1", "46"},
+                {"B1", "47"},
+                {"C2", "48"},
+                {"C#2", "49"},
+                {"D2", "50"},
+                {"D#2", "51"},
+                {"E2", "52"},
+                {"F2", "53"},
+                {"F#2", "54"},
+                {"G2", "55"},
+                {"G#2", "56"},
+                {"A2", "57"},
+                {"A#2", "58"},
+                {"B2", "59"},
+                {"C3", "60"},
+                {"C#3", "61"},
+                {"D3", "62"},
+                {"D#3", "63"},
+                {"E3", "64"},
+                {"F3", "65"},
+                {"F#3", "66"},
+                {"G3", "67"},
+                {"G#3", "68"},
+                {"A3", "69"},
+                {"A#3", "70"},
+                {"B3", "71"},
+                {"C4", "72"},
+                {"C#4", "73"},
+                {"D4", "74"},
+                {"D#4", "75"},
+                {"E4", "76"},
+                {"F4", "77"},
+                {"F#4", "78"},
+                {"G4", "79"},
+                {"G#4", "80"},
+                {"A4", "81"},
+                {"A#4", "82"},
+                {"B4", "83"},
+                {"C5", "84"},
+                {"C#5", "85"},
+                {"D5", "86"},
+                {"D#5", "87"},
+                {"E5", "88"},
+                {"F5", "89"},
+                {"F#5", "90"},
+                {"G5", "91"},
+                {"G#5", "92"},
+                {"A5", "93"},
+                {"A#5", "94"},
+                {"B5", "95"},
+                {"C6", "96"},
+                {"C6B", "96"},
+                {"C#6", "97"},
+                {"D6", "98"},
+                {"D#6", "99"},
+                {"E6", "100"},
+                {"F6", "101"},
+                {"F#6", "102"},
+                {"G6", "103"},
+                {"G#6", "104"},
+                {"A6", "105"},
+                {"A#6", "106"}
+            };
+        }
     }
 }
